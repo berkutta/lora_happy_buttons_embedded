@@ -57,6 +57,27 @@ const lmic_pinmap lmic_pins = {
     .dio = {RFM_DIO_0, RFM_DIO_1, RFM_DIO_2},
 };
 
+void specialpwm(uint8_t pin, uint8_t duration, uint8_t percentage) {
+  // We are doing ~10kHz PWM, so the periode is 100us
+  for(int i = 0; i <= duration; i++) {
+    digitalWrite(pin, 1);
+    delayMicroseconds(percentage);
+    digitalWrite(pin, 0);
+    delayMicroseconds(100 - percentage);
+  }
+}
+
+void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times) {
+  for(int i = 0; i <= times; i++) {
+    for(int j = 0; j <= 100; j++) {
+      specialpwm(pin, duration, j);
+    }
+    for(int j = 100; j >= 0; j--) {
+      specialpwm(pin, duration, j);
+    }
+  }
+}
+
 void onEvent (ev_t ev) {
     Serial.print(os_getTime());
     Serial.print(": ");
@@ -177,38 +198,30 @@ void btnint() {
     }
     delayMicroseconds(10);
   }
+
+  // Propably need some fine tuning :)
+  uint8_t pwm_time = 5;
+  uint8_t pwm_times = 2;
   
   if(switch0_debouncer >= 100) {
     switch0_counter++;
     
-    for(int i = 0; i <= 10; i++) {
-      digitalWrite(LED0, 1);  delayMicroseconds(250000);
-      digitalWrite(LED0, 0);  delayMicroseconds(250000); 
-    }
+    specialpwmsequence(LED0, pwm_time, pwm_times);
   }
   if(switch1_debouncer >= 100) {
     switch1_counter++;
     
-    for(int i = 0; i <= 10; i++) {
-      digitalWrite(LED1, 1);  delayMicroseconds(250000);
-      digitalWrite(LED1, 0);  delayMicroseconds(250000); 
-    }
+    specialpwmsequence(LED1, pwm_time, pwm_times);
   }
   if(switch2_debouncer >= 100) {
     switch2_counter++;
     
-    for(int i = 0; i <= 10; i++) {
-      digitalWrite(LED2, 1);  delayMicroseconds(250000);
-      digitalWrite(LED2, 0);  delayMicroseconds(250000); 
-    }
+    specialpwmsequence(LED2, pwm_time, pwm_times);
   }
   if(switch3_debouncer >= 100) {
     switch3_counter++;
     
-    for(int i = 0; i <= 10; i++) {
-      digitalWrite(LED3, 1);  delayMicroseconds(250000);
-      digitalWrite(LED3, 0);  delayMicroseconds(250000); 
-    }
+    specialpwmsequence(LED3, pwm_time, pwm_times);
   }
 }
 
