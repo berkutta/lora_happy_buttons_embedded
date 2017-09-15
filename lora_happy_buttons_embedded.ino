@@ -44,6 +44,8 @@ uint8_t switch1_counter = 0;
 uint8_t switch2_counter = 0;
 uint8_t switch3_counter = 0;
 
+uint8_t early_sending_flag = 0;
+
 // Get's reseted to 0x00 after first lorawan transmit
 uint8_t device_status = 0x01;
 
@@ -78,6 +80,32 @@ void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times) {
   }
 }
 
+void enter_sleep_condition(void) {
+  LMIC_shutdown();
+  
+  Serial.println("Going to sleep now\n");
+  
+  Serial.end();
+  // SPI.end() doesn't work reliable, have I already noted, I hate Arduino!
+  SPCR &= ~_BV(SPE);
+  pinMode(RFM_NSS, INPUT);
+  pinMode(RFM_RST, INPUT);
+  digitalWrite(PSU_SWITCH, 1);
+}
+
+void exit_sleep_condition(void) {
+  digitalWrite(PSU_SWITCH, 0);
+  Serial.begin(9600);
+  Serial.println("Finished sleeping\n");
+  pinMode(RFM_NSS, OUTPUT);
+  //pinMode(PSU_SWITCH, OUTPUT);            
+  SPI.begin();
+  
+  os_init();
+  LMIC.opmode       =  OP_NONE;
+}
+
+
 void onEvent (ev_t ev) {
     Serial.print(os_getTime());
     Serial.print(": ");
@@ -97,6 +125,7 @@ void onEvent (ev_t ev) {
             attachPCINT(digitalPinToPCINT(SWITCH1), btnint, FALLING);
             attachPCINT(digitalPinToPCINT(SWITCH2), btnint, FALLING);
             attachPCINT(digitalPinToPCINT(SWITCH3), btnint, FALLING);
+            attachPCINT(digitalPinToPCINT(BTN_PCB), btnint, FALLING);
             break;
         case EV_JOIN_FAILED:
             Serial.println(F("EV_JOIN_FAILED"));
@@ -114,31 +143,19 @@ void onEvent (ev_t ev) {
               Serial.println(F(" bytes of payload"));
             }
 
-            LMIC_shutdown();
-
-            Serial.println("Going to sleep now\n");
+            enter_sleep_condition();
             
-            Serial.end();
-            // SPI.end() doesn't work reliable, have I already noted, I hate Arduino!
-            SPCR &= ~_BV(SPE);
-            pinMode(RFM_NSS, INPUT);
-            pinMode(RFM_RST, INPUT);
-            digitalWrite(PSU_SWITCH, 1);
-
             // Happy sleeping for ~15min
             for(int i = 0; i <= 112; i++) {
-              LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF); 
+              LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+
+              if(early_sending_flag == 1) {
+                early_sending_flag = 0;
+                break;
+              }
             }
             
-            digitalWrite(PSU_SWITCH, 0);
-            Serial.begin(9600);
-            Serial.println("Finished sleeping\n");
-            pinMode(RFM_NSS, OUTPUT);
-            //pinMode(PSU_SWITCH, OUTPUT);            
-            SPI.begin();
-
-            os_init();
-            LMIC.opmode       =  OP_NONE;
+            exit_sleep_condition();
             
             do_send(&sendjob);
             break;
@@ -180,7 +197,7 @@ void do_send(osjob_t* j){
 }
 
 void btnint() {
-  uint8_t switch0_debouncer = 0, switch1_debouncer = 0, switch2_debouncer = 0, switch3_debouncer = 0;
+  uint8_t switch0_debouncer = 0, switch1_debouncer = 0, switch2_debouncer = 0, switch3_debouncer = 0, btn_pcb_debouncer = 0;
   
   // Do some sort of button debouncing
   for(int i = 0; i <= 100; i++) {
@@ -195,6 +212,9 @@ void btnint() {
     }
     if(!digitalRead(SWITCH3)) {
       switch3_debouncer++;
+    }
+    if(!digitalRead(BTN_PCB)) {
+      btn_pcb_debouncer++;
     }
     delayMicroseconds(10);
   }
@@ -222,6 +242,9 @@ void btnint() {
     switch3_counter++;
     
     specialpwmsequence(LED3, pwm_time, pwm_times);
+  }
+  if(btn_pcb_debouncer >= 90) {
+    early_sending_flag = 1;
   }
 }
 
