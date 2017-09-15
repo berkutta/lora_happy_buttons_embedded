@@ -309,6 +309,8 @@ void setup() {
 
   Serial.print("Hello\n");
 
+  Serial.println("SW: V0.2");
+
   EEPROM.get(0, myconfig);
 
   char mybuffer[100];
