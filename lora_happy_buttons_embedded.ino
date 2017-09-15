@@ -203,22 +203,22 @@ void btnint() {
   uint8_t pwm_time = 5;
   uint8_t pwm_times = 2;
   
-  if(switch0_debouncer >= 100) {
+  if(switch0_debouncer >= 10) {
     switch0_counter++;
     
     specialpwmsequence(LED0, pwm_time, pwm_times);
   }
-  if(switch1_debouncer >= 100) {
+  if(switch1_debouncer >= 10) {
     switch1_counter++;
     
     specialpwmsequence(LED1, pwm_time, pwm_times);
   }
-  if(switch2_debouncer >= 100) {
+  if(switch2_debouncer >= 10) {
     switch2_counter++;
     
     specialpwmsequence(LED2, pwm_time, pwm_times);
   }
-  if(switch3_debouncer >= 100) {
+  if(switch3_debouncer >= 10) {
     switch3_counter++;
     
     specialpwmsequence(LED3, pwm_time, pwm_times);
