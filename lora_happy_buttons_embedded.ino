@@ -45,6 +45,7 @@ uint8_t switch2_counter = 0;
 uint8_t switch3_counter = 0;
 
 uint8_t early_sending_flag = 0;
+uint8_t low_battery_flag = 0;
 
 // Get's reseted to 0x00 after first lorawan transmit
 uint8_t device_status = 0x01;
@@ -78,6 +79,16 @@ void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times) {
       specialpwm(pin, duration, j);
     }
   }
+}
+
+float convert_analog(float value) {
+  float voltage;
+  
+  voltage = value * 0.0010752688172043;
+  // Calculate in the resistor divider
+  voltage = (voltage*11)/1;
+
+  return voltage;
 }
 
 void enter_sleep_condition(void) {
@@ -177,26 +188,39 @@ void do_send(osjob_t* j){
         delay(25);
         meassurement = analogRead(7);
 
-        
-        mypayload[0] = device_status << 2;
-        mypayload[0] |= (meassurement & 0x300) >> 8;
-        mypayload[1] = meassurement & 0xFF;
+        if(convert_analog(meassurement) >= 3.0) {
+          // Sorry, battery to low :(
+          mypayload[0] = device_status << 2;
+          mypayload[0] |= (meassurement & 0x300) >> 8;
+          mypayload[1] = meassurement & 0xFF;
+          
+          mypayload[2] = switch0_counter;
+          mypayload[3] = switch1_counter;
+          mypayload[4] = switch2_counter;
+          mypayload[5] = switch3_counter;
+          
+          device_status = 0;
+          
+          // LoRaWAN Port defines protocoll/SW Version
+          LMIC_setTxData2(1, mypayload, sizeof(mypayload), 0);
+          Serial.println(F("Packet queued"));
 
-        mypayload[2] = switch0_counter;
-        mypayload[3] = switch1_counter;
-        mypayload[4] = switch2_counter;
-        mypayload[5] = switch3_counter;
+          low_battery_flag = 0;
+        } else {
+          low_battery_flag = 1;
 
-        device_status = 0;
-        
-        // LoRaWAN Port defines protocoll/SW Version
-        LMIC_setTxData2(1, mypayload, sizeof(mypayload), 0);
-        Serial.println(F("Packet queued"));
+          // Fake event to keep it going
+          onEvent(EV_TXCOMPLETE);
+        }
     }
     // Next TX is scheduled after TX_COMPLETE event.
 }
 
 void btnint() {
+  if(low_battery_flag == 1) {
+    return;
+  }
+  
   uint8_t switch0_debouncer = 0, switch1_debouncer = 0, switch2_debouncer = 0, switch3_debouncer = 0, btn_pcb_debouncer = 0;
   
   // Do some sort of button debouncing
