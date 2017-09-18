@@ -77,8 +77,6 @@ void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times, uint8_t in
   
   for(int i = 0; i <= times; i++) {
     for(int j = 0; j <= 100; j++) {
-      specialpwm(pin, duration, j);
-
       if(digitalRead(interruptpin)) {
         released_flag = 1;
       }
@@ -89,10 +87,9 @@ void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times, uint8_t in
         abort_flag = 1;
         break;
       }
+      specialpwm(pin, duration, j);
     }
     for(int j = 100; j >= 0; j--) {
-      specialpwm(pin, duration, j);
-
       if(digitalRead(interruptpin)) {
         released_flag = 1;
       }
@@ -103,6 +100,7 @@ void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times, uint8_t in
         abort_flag = 1;
         break;
       }
+      specialpwm(pin, duration, j);
     }
   }
 }
