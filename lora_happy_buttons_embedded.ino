@@ -126,9 +126,13 @@ void enter_sleep_condition(void) {
   pinMode(RFM_NSS, INPUT);
   pinMode(RFM_RST, INPUT);
   digitalWrite(PSU_SWITCH, 1);
+
+  attachPCINT(digitalPinToPCINT(BTN_PCB), btnint, FALLING);
 }
 
 void exit_sleep_condition(void) {
+  detachPinChangeInterrupt(digitalPinToPCINT(BTN_PCB));
+
   digitalWrite(PSU_SWITCH, 0);
   Serial.begin(9600);
   Serial.println("Finished sleeping\n");
