@@ -1,0 +1,30 @@
+language: python
+python:
+    - "2.7"
+
+# Cache PlatformIO packages using Travis CI container-based infrastructure bla
+sudo: false
+cache:
+    directories:
+        - "~/.platformio"
+
+env:
+    global:
+        - PLATFORMIO_CI_SRC=lora_happy_buttons_embedded.ino
+        - hex_name=lora_happy_buttony_build_$TRAVIS_COMMIT.hex
+        - secure: "meU/EwEnEXj2wzS1janDYK27DJFS/jTvW8FF6GKpSNsbyNR0UmelayJXI7fo+m8d4VmBoib1gZFgJ7cveYFPwJmCeJ5mxkvrqKwXMbHiocueadV9cn/+xYphNPK+u89aEoAzd23ZKaVLnw7I0xqMCUvoNcXYWvE6U9O6RdTnwi3XpVhW+iBHO920sGGxxdftip0moMfI7ioe8p4ISfPszChuymy0HgEyiTleLFXmzhkBA1YxUac4rygfkHs2YvME1/qqAezYDREQkRIEOASNmXiBcie5MtkXIbc/8C5t0hg2g3s6cwhn5MJ+OFx7q10EhRQROE1blLfCLrErRisVHBz4CvZ6p/2/1GiLohMXwqnA1gsw3fc9tjH4ezPgwbK5DNFJi8mdmY4yYbUB5HW6aXF8aHVIR1FvWIMokAVBVyYsMdbyUULc96UwadjqseoWz2L61cXyfmIZEIQMHcko/jeBQ+TkHyxhJdgLzponBcw+76zsHt0Xp8lBWDEGIC7g/QgW2gTWxEfdMYUb65bRd69595hQJ6CHKJZnSd9ObIhHJfBuT93FRWVypc8TO0M5P5TQIKjZ3DQeBdN8lE2r3LECiB2dkXsQGfPMF1as6YvohbYx36pNHvm6MTKD8BcrDmcr2v0/Piv4YEvtzQQ5IzsmTAyern42bz5ucg3dj4s="
+        - secure: "WKhgN7QxpE1CRpGVfOfdaf6yqFIU260Q6c5Skwtwr52KNgBq7QJTbtG9c71JDHSaw+9P7V/WS25rf1gsfyOYfklXnpvEHcbTtOtmAmHIYHcnYPLciF/xe3f8UB2HZakO5BtbhSsCGE4t/U29cne7Nk1Qc+Gno7hcg0E6q2gxgdqsLI9iQabDzmpo8onEZk7o4o0vQXM5HtAlNQlLlBuG1ueb4/UtSQTQQieGpyx/X8fZV3v3YKnNhzKe2qGVb/8WZ2oqgGmgx271g6K5yQaECfxIaIyJ8obgpaA9F0T6b5y52h/F57XkVTIaxXrjogzhTVVrJ0wyN6HG0yxbcLW7rMoVUULgxPH6+Zf5bvK1uwP98k0tcOUKhstDp57QOyL4b/HzZ23rHzWLIAVaqMEmESRI6YcEKcVhTTGGrEcK63cgVFuWmKnlu8MYpds6tQOKNoEKB4vppGqdiDmLdm6PreKgVsTI2r8GgKJR2ez1E+aaLc3RQy99f8tZzU+RjBLjJGcpwWODGDVCCCv3KoklcGoNY6ppnxJD6y+2T4v5uYXdRT+BaTUia3DE3qEko80KMkK9swmYOYPBhS8w68Q9uO4H4aB3pGeWMGnndi30uX0gi/Gz7Iag/qOJge19mOltQKFD+FgAORv4QgQHQgXARLS178JivoJbqMCUw4Q6lv4="
+        
+install:
+    - wget -O gdrive https://docs.google.com/uc?id=0B3X9GlR6EmbnQ0FtZmJJUXEyRTA&export=download
+    - pip install -U platformio
+    - chmod +x gdrive
+    - platformio lib install https://github.com/matthijskooijman/arduino-lmic
+    - platformio lib install "Low-Power"
+    - platformio lib install "PinChangeInterrupt"
+    - mkdir /tmp/build
+    
+script:
+    - platformio ci --build-dir /tmp/build/ --keep-build-dir --board=pro8MHzatmega328
+    - mv /tmp/build/.pioenvs/pro8MHzatmega328/firmware.hex $hex_name
+    - ./gdrive upload --refresh-token $drive_token --parent $drive_folder $hex_name
