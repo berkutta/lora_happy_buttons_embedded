@@ -72,36 +72,13 @@ void specialpwm(uint8_t pin, uint8_t duration, uint8_t percentage) {
   }
 }
 
-// Special PWM with interrupt possibillity
-void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times, uint8_t interruptpin) {
-  uint8_t released_flag = 0;
-  uint8_t abort_flag = 0;
-  
+// Special PWM
+void specialpwmsequence(uint8_t pin, uint8_t duration, uint8_t times) {
   for(int i = 0; i <= times; i++) {
     for(int j = 0; j <= 100; j++) {
-      if(digitalRead(interruptpin)) {
-        released_flag = 1;
-      }
-      
-      if((!digitalRead(interruptpin) && released_flag) || abort_flag) {
-        // Button got pressed while blinking, start new check
-        btnint();
-        abort_flag = 1;
-        break;
-      }
       specialpwm(pin, duration, j);
     }
     for(int j = 100; j >= 0; j--) {
-      if(digitalRead(interruptpin)) {
-        released_flag = 1;
-      }
-
-      if((!digitalRead(interruptpin) && released_flag) || abort_flag) {
-        // Button got pressed while blinking, start new check
-        btnint();
-        abort_flag = 1;
-        break;
-      }
       specialpwm(pin, duration, j);
     }
   }
@@ -293,22 +270,22 @@ void btnint() {
   if(switch0_debouncer >= 50) {
     switch0_counter++;
     
-    specialpwmsequence(LED0, pwm_time, pwm_times, SWITCH0);
+    specialpwmsequence(LED0, pwm_time, pwm_times);
   }
   if(switch1_debouncer >= 50) {
     switch1_counter++;
     
-    specialpwmsequence(LED1, pwm_time, pwm_times, SWITCH1);
+    specialpwmsequence(LED1, pwm_time, pwm_times);
   }
   if(switch2_debouncer >= 50) {
     switch2_counter++;
     
-    specialpwmsequence(LED2, pwm_time, pwm_times, SWITCH2);
+    specialpwmsequence(LED2, pwm_time, pwm_times);
   }
   if(switch3_debouncer >= 50) {
     switch3_counter++;
     
-    specialpwmsequence(LED3, pwm_time, pwm_times, SWITCH3);
+    specialpwmsequence(LED3, pwm_time, pwm_times);
   }
   if(btn_pcb_debouncer >= 90) {
     early_sending_flag = 1;
