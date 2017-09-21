@@ -47,6 +47,8 @@ uint8_t switch3_counter = 0;
 uint8_t early_sending_flag = 0;
 uint8_t low_battery_flag = 0;
 
+uint8_t debug_flag = 0;
+
 // Get's reseted to 0x00 after first lorawan transmit
 uint8_t device_status = 0x01;
 
@@ -117,10 +119,13 @@ float convert_analog(float value) {
 
 void enter_sleep_condition(void) {
   LMIC_shutdown();
+
+  if(debug_flag == 1) {
+    Serial.println("Going to sleep now\n");
   
-  Serial.println("Going to sleep now\n");
-  
-  Serial.end();
+    Serial.end();
+  }
+
   // SPI.end() doesn't work reliable, have I already noted, I hate Arduino!
   SPCR &= ~_BV(SPE);
   pinMode(RFM_NSS, INPUT);
@@ -134,8 +139,12 @@ void exit_sleep_condition(void) {
   detachPinChangeInterrupt(digitalPinToPCINT(BTN_PCB));
 
   digitalWrite(PSU_SWITCH, 0);
-  Serial.begin(9600);
-  Serial.println("Finished sleeping\n");
+
+  if(debug_flag == 1) {
+    Serial.begin(9600);
+    Serial.println("Finished sleeping\n");
+  }
+
   pinMode(RFM_NSS, OUTPUT);
   //pinMode(PSU_SWITCH, OUTPUT);            
   SPI.begin();
@@ -146,14 +155,16 @@ void exit_sleep_condition(void) {
 
 
 void onEvent (ev_t ev) {
-    Serial.print(os_getTime());
-    Serial.print(": ");
+    if(debug_flag == 1) {
+      Serial.print(os_getTime());
+      Serial.print(": ");
+    }
     switch(ev) {
         case EV_JOINING:
-            Serial.println(F("EV_JOINING"));
+            if(debug_flag == 1) Serial.println(F("EV_JOINING"));
             break;
         case EV_JOINED:
-            Serial.println(F("EV_JOINED"));
+            if(debug_flag == 1) Serial.println(F("EV_JOINED"));
 
             for(int i = 0; i <= 100; i++) {
               digitalWrite(LED0, 1);  digitalWrite(LED1, 1);  digitalWrite(LED2, 1);  digitalWrite(LED3, 1);  delayMicroseconds(250000);
@@ -167,19 +178,21 @@ void onEvent (ev_t ev) {
             attachPCINT(digitalPinToPCINT(BTN_PCB), btnint, FALLING);
             break;
         case EV_JOIN_FAILED:
-            Serial.println(F("EV_JOIN_FAILED"));
+            if(debug_flag == 1) Serial.println(F("EV_JOIN_FAILED"));
             break;
         case EV_REJOIN_FAILED:
-            Serial.println(F("EV_REJOIN_FAILED"));
+            if(debug_flag == 1) Serial.println(F("EV_REJOIN_FAILED"));
             break;
         case EV_TXCOMPLETE:
-            Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
-            if (LMIC.txrxFlags & TXRX_ACK)
-              Serial.println(F("Received ack"));
-            if (LMIC.dataLen) {
-              Serial.println(F("Received "));
-              Serial.println(LMIC.dataLen);
-              Serial.println(F(" bytes of payload"));
+            if(debug_flag == 1) {
+              Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
+              if (LMIC.txrxFlags & TXRX_ACK)
+                Serial.println(F("Received ack"));
+              if (LMIC.dataLen) {
+                Serial.println(F("Received "));
+                Serial.println(LMIC.dataLen);
+                Serial.println(F(" bytes of payload"));
+              }
             }
 
             enter_sleep_condition();
@@ -199,7 +212,9 @@ void onEvent (ev_t ev) {
             do_send(&sendjob);
             break;
          default:
-            Serial.println(F("Unknown event"));
+            if(debug_flag == 1) {
+              Serial.println(F("Unknown event"));
+            }
             break;
     }
 }
@@ -207,7 +222,7 @@ void onEvent (ev_t ev) {
 void do_send(osjob_t* j){
     // Check if there is not a current TX/RX job running
     if (LMIC.opmode & OP_TXRXPEND) {
-        Serial.println(F("OP_TXRXPEND, not sending"));
+        if(debug_flag == 1) Serial.println(F("OP_TXRXPEND, not sending"));
     } else {
         // Do a Arduino conform meassurement of the Voltage, Arduino doesn't work, sorry!
         analogReference(INTERNAL);
@@ -231,7 +246,7 @@ void do_send(osjob_t* j){
           
           // LoRaWAN Port defines protocoll/SW Version
           LMIC_setTxData2(1, mypayload, sizeof(mypayload), 0);
-          Serial.println(F("Packet queued"));
+          if(debug_flag == 1) Serial.println(F("Packet queued"));
 
           low_battery_flag = 0;
         } else {
@@ -317,7 +332,7 @@ void lmic_setup() {
 }
 
 void setup() {
-  Serial.begin(9600);
+  if(debug_flag == 1) Serial.begin(9600);
   pinMode(LED_BUILTIN, INPUT);
 
   pinMode(PSU_SWITCH, OUTPUT);
@@ -335,9 +350,10 @@ void setup() {
   pinMode(LED2, OUTPUT);
   pinMode(LED3, OUTPUT);
 
-  Serial.print("Hello\n");
-
-  Serial.println("SW: V0.2");
+  if(debug_flag == 1) {
+    Serial.print("Hello\n");
+    Serial.println("SW: V0.2");
+  }
 
   EEPROM.get(0, myconfig);
 
@@ -349,7 +365,7 @@ void setup() {
               myconfig.appkey[0], myconfig.appkey[1], myconfig.appkey[2], myconfig.appkey[3], myconfig.appkey[4], myconfig.appkey[5], myconfig.appkey[6], myconfig.appkey[7], myconfig.appkey[8], myconfig.appkey[9], myconfig.appkey[10], myconfig.appkey[11], myconfig.appkey[12], myconfig.appkey[13], myconfig.appkey[14], myconfig.appkey[15]
               );
 
-  Serial.println(mybuffer);
+  if(debug_flag == 1) Serial.println(mybuffer);
 
   os_init();
   LMIC_reset();
