@@ -240,7 +240,12 @@ void btnint() {
   if(low_battery_flag == 1) {
     return;
   }
-  
+
+  detachPinChangeInterrupt(digitalPinToPCINT(SWITCH0));
+  detachPinChangeInterrupt(digitalPinToPCINT(SWITCH1));
+  detachPinChangeInterrupt(digitalPinToPCINT(SWITCH2));
+  detachPinChangeInterrupt(digitalPinToPCINT(SWITCH3));
+
   uint8_t switch0_debouncer = 0, switch1_debouncer = 0, switch2_debouncer = 0, switch3_debouncer = 0, btn_pcb_debouncer = 0;
   
   // Do some sort of button debouncing
@@ -264,7 +269,7 @@ void btnint() {
   }
 
   // Propably need some fine tuning :)
-  uint8_t pwm_time = 5;
+  uint8_t pwm_time = 30;
   uint8_t pwm_times = 2;
   
   if(switch0_debouncer >= 50) {
@@ -290,6 +295,11 @@ void btnint() {
   if(btn_pcb_debouncer >= 90) {
     early_sending_flag = 1;
   }
+
+  attachPCINT(digitalPinToPCINT(SWITCH0), btnint, FALLING);
+  attachPCINT(digitalPinToPCINT(SWITCH1), btnint, FALLING);
+  attachPCINT(digitalPinToPCINT(SWITCH2), btnint, FALLING);
+  attachPCINT(digitalPinToPCINT(SWITCH3), btnint, FALLING);
 }
 
 void lmic_setup() {
