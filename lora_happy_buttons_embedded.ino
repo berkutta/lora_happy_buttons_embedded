@@ -174,8 +174,8 @@ void onEvent (ev_t ev) {
 
             enter_sleep_condition();
             
-            // Happy sleeping for ~15min
-            for(int i = 0; i <= 112; i++) {
+            // Happy sleeping for ~10min
+            for(int i = 0; i <= 75; i++) {
               LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 
               if(early_sending_flag == 1) {
