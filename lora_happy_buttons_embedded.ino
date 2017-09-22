@@ -46,6 +46,7 @@ uint8_t switch3_counter = 0;
 
 uint8_t early_sending_flag = 0;
 uint8_t low_battery_flag = 0;
+uint8_t blocking_flag = 0;
 
 uint8_t debug_flag = 0;
 
@@ -175,12 +176,16 @@ void onEvent (ev_t ev) {
             enter_sleep_condition();
             
             // Happy sleeping for ~10min
-            for(int i = 0; i <= 75; i++) {
-              LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
+            for(int i = 0; i <= 75 * 2; i++) {
+              LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
 
               if(early_sending_flag == 1) {
                 early_sending_flag = 0;
                 break;
+              }
+
+              if(blocking_flag != 0) {
+                blocking_flag--;
               }
             }
             
@@ -271,26 +276,36 @@ void btnint() {
   // Propably need some fine tuning :)
   uint8_t pwm_time = 10;
   uint8_t pwm_times = 0;
-  
-  if(switch0_debouncer >= 50) {
-    switch0_counter++;
-    
-    specialpwmsequence(LED0, pwm_time, pwm_times);
-  }
-  if(switch1_debouncer >= 50) {
-    switch1_counter++;
-    
-    specialpwmsequence(LED1, pwm_time, pwm_times);
-  }
-  if(switch2_debouncer >= 50) {
-    switch2_counter++;
-    
-    specialpwmsequence(LED2, pwm_time, pwm_times);
-  }
-  if(switch3_debouncer >= 50) {
-    switch3_counter++;
-    
-    specialpwmsequence(LED3, pwm_time, pwm_times);
+
+  if(blocking_flag == 0) {
+    if(switch0_debouncer >= 50) {
+      switch0_counter++;
+      
+      specialpwmsequence(LED0, pwm_time, pwm_times);
+
+      blocking_flag = 30;
+    }
+    if(switch1_debouncer >= 50) {
+      switch1_counter++;
+      
+      specialpwmsequence(LED1, pwm_time, pwm_times);
+
+      blocking_flag = 30;
+    }
+    if(switch2_debouncer >= 50) {
+      switch2_counter++;
+      
+      specialpwmsequence(LED2, pwm_time, pwm_times);
+
+      blocking_flag = 30;
+    }
+    if(switch3_debouncer >= 50) {
+      switch3_counter++;
+      
+      specialpwmsequence(LED3, pwm_time, pwm_times);
+
+      blocking_flag = 30;
+    }  
   }
   if(btn_pcb_debouncer >= 90) {
     early_sending_flag = 1;
