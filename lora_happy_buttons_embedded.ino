@@ -176,19 +176,15 @@ void onEvent (ev_t ev) {
             enter_sleep_condition();
             
             // Happy sleeping for ~10min
-            for(int i = 0; i <= 75 * 2; i++) {
-              LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+            for(int i = 0; i <= 75; i++) {
+              LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 
               if(early_sending_flag == 1) {
                 early_sending_flag = 0;
                 break;
               }
-
-              if(blocking_flag != 0) {
-                blocking_flag--;
-              }
             }
-            
+        
             exit_sleep_condition();
             
             do_send(&sendjob);
@@ -283,28 +279,28 @@ void btnint() {
       
       specialpwmsequence(LED0, pwm_time, pwm_times);
 
-      blocking_flag = 30;
+      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
     }
     if(switch1_debouncer >= 50) {
       switch1_counter++;
       
       specialpwmsequence(LED1, pwm_time, pwm_times);
 
-      blocking_flag = 30;
+      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
     }
     if(switch2_debouncer >= 50) {
       switch2_counter++;
       
       specialpwmsequence(LED2, pwm_time, pwm_times);
 
-      blocking_flag = 30;
+      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
     }
     if(switch3_debouncer >= 50) {
       switch3_counter++;
       
       specialpwmsequence(LED3, pwm_time, pwm_times);
 
-      blocking_flag = 30;
+      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
     }  
   }
   if(btn_pcb_debouncer >= 90) {
