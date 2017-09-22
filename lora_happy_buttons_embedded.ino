@@ -269,8 +269,8 @@ void btnint() {
   }
 
   // Propably need some fine tuning :)
-  uint8_t pwm_time = 30;
-  uint8_t pwm_times = 2;
+  uint8_t pwm_time = 10;
+  uint8_t pwm_times = 0;
   
   if(switch0_debouncer >= 50) {
     switch0_counter++;
