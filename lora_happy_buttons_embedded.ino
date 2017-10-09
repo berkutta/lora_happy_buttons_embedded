@@ -33,7 +33,13 @@ typedef struct {
   uint8_t appkey[16];
 } taz_configuration_t;
 
+typedef struct {
+  uint8_t transmission_delay_value;
+  uint8_t debouncing_time_value;
+} taz_configuration_internal_t;
+
 taz_configuration_t myconfig;
+taz_configuration_internal_t myconfig_internal;
 
 void os_getArtEui (u1_t* buf) { memcpy(buf, myconfig.appeui, 8);}
 void os_getDevEui (u1_t* buf) { memcpy(buf, myconfig.deveui, 8);}
@@ -61,6 +67,11 @@ const lmic_pinmap lmic_pins = {
     .rxtx = LMIC_UNUSED_PIN,
     .rst = RFM_RST,
     .dio = {RFM_DIO_0, RFM_DIO_1, RFM_DIO_2},
+};
+
+enum configuration_frame {
+  transmission_delay = 0xA1,
+  debouncing_time = 0xA2
 };
 
 void specialpwm(uint8_t pin, uint8_t duration, uint8_t percentage) {
@@ -162,21 +173,34 @@ void onEvent (ev_t ev) {
             if(debug_flag == 1) Serial.println(F("EV_REJOIN_FAILED"));
             break;
         case EV_TXCOMPLETE:
-            if(debug_flag == 1) {
-              Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
-              if (LMIC.txrxFlags & TXRX_ACK)
-                Serial.println(F("Received ack"));
-              if (LMIC.dataLen) {
-                Serial.println(F("Received "));
-                Serial.println(LMIC.dataLen);
-                Serial.println(F(" bytes of payload"));
+            if(debug_flag == 1) Serial.println(F("EV_TXCOMPLETE (includes waiting for RX windows)"));
+            if (LMIC.txrxFlags & TXRX_ACK)
+              if(debug_flag == 1) Serial.println(F("Received ack"));
+              
+            if (LMIC.dataLen == 2) {
+              Serial.println("Received configuration Frame");
+              switch(LMIC.frame[LMIC.dataBeg]) {
+                case transmission_delay:
+                  Serial.print("New remote config - Tranmission delay: ");
+                  Serial.print(LMIC.frame[LMIC.dataBeg + 1], DEC);
+                  myconfig_internal.transmission_delay_value = LMIC.frame[LMIC.dataBeg + 1];
+              
+                  EEPROM.put(60, myconfig_internal);
+                  break;
+                case debouncing_time:
+                  Serial.print("New remote config - debouncing time: ");
+                  Serial.print(LMIC.frame[LMIC.dataBeg + 1], DEC);
+                  myconfig_internal.debouncing_time_value = LMIC.frame[LMIC.dataBeg + 1];
+              
+                  EEPROM.put(60, myconfig_internal);
+                  break;
               }
             }
 
             enter_sleep_condition();
             
             // Happy sleeping for ~10min
-            for(int i = 0; i <= 75; i++) {
+            for(int i = 0; i <= myconfig_internal.transmission_delay_value; i++) {
               LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_OFF);
 
               if(early_sending_flag == 1) {
@@ -274,7 +298,7 @@ void btnint() {
   uint8_t pwm_times = 0;
 
   if(blocking_flag == 0) {
-    if(switch0_debouncer >= 50) {
+    if(switch0_debouncer >= myconfig_internal.debouncing_time_value) {
       switch0_counter++;
       
       specialpwmsequence(LED0, pwm_time, pwm_times);
@@ -284,7 +308,7 @@ void btnint() {
         delayMicroseconds(1000);
       }
     }
-    if(switch1_debouncer >= 50) {
+    if(switch1_debouncer >= myconfig_internal.debouncing_time_value) {
       switch1_counter++;
       
       specialpwmsequence(LED1, pwm_time, pwm_times);
@@ -294,7 +318,7 @@ void btnint() {
         delayMicroseconds(1000);
       }
     }
-    if(switch2_debouncer >= 50) {
+    if(switch2_debouncer >= myconfig_internal.debouncing_time_value) {
       switch2_counter++;
       
       specialpwmsequence(LED2, pwm_time, pwm_times);
@@ -304,7 +328,7 @@ void btnint() {
         delayMicroseconds(1000);
       }
     }
-    if(switch3_debouncer >= 50) {
+    if(switch3_debouncer >= myconfig_internal.debouncing_time_value) {
       switch3_counter++;
       
       specialpwmsequence(LED3, pwm_time, pwm_times);
@@ -370,10 +394,19 @@ void setup() {
   }
 
   EEPROM.get(0, myconfig);
+  EEPROM.get(60, myconfig_internal);
 
-  char mybuffer[100];
-  sprintf(mybuffer, "SNR: %d\nVersion: %d\nAppeui: %X%X%X%X%X%X%X%X\nDeveui: %X%X%X%X%X%X%X%X\nAppkey: %X%X%X%X%X%X%X%X%X%X%X%X%X%X%X%X", 
-              myconfig.snr, myconfig.version,
+  if( (myconfig_internal.transmission_delay_value == 0xFF) && (myconfig_internal.debouncing_time_value == 0xFF) ) {
+    Serial.println("New EEPROM, reset to default values");
+    myconfig_internal.transmission_delay_value = 0x4B; // 10min
+    myconfig_internal.debouncing_time_value = 0x32;
+
+    EEPROM.put(60, myconfig_internal);
+  }
+
+  char mybuffer[150];
+  sprintf(mybuffer, "Transmission delay: %d\nDebouncing Time: %d\nSNR: %d\nVersion: %d\nAppeui: %X%X%X%X%X%X%X%X\nDeveui: %X%X%X%X%X%X%X%X\nAppkey: %X%X%X%X%X%X%X%X%X%X%X%X%X%X%X%X", 
+              myconfig_internal.transmission_delay_value, myconfig_internal.debouncing_time_value, myconfig.snr, myconfig.version,
               myconfig.appeui[0], myconfig.appeui[1], myconfig.appeui[2], myconfig.appeui[3], myconfig.appeui[4], myconfig.appeui[5], myconfig.appeui[6], myconfig.appeui[7],
               myconfig.deveui[0], myconfig.deveui[1], myconfig.deveui[2], myconfig.deveui[3], myconfig.deveui[4], myconfig.deveui[5], myconfig.deveui[6], myconfig.deveui[7],
               myconfig.appkey[0], myconfig.appkey[1], myconfig.appkey[2], myconfig.appkey[3], myconfig.appkey[4], myconfig.appkey[5], myconfig.appkey[6], myconfig.appkey[7], myconfig.appkey[8], myconfig.appkey[9], myconfig.appkey[10], myconfig.appkey[11], myconfig.appkey[12], myconfig.appkey[13], myconfig.appkey[14], myconfig.appkey[15]
