@@ -316,6 +316,10 @@ void btnint() {
     }  
   }
   if(btn_pcb_debouncer >= 90) {
+    specialpwmsequence(LED0, 3, 0);
+    specialpwmsequence(LED1, 3, 0);
+    specialpwmsequence(LED2, 3, 0);
+    specialpwmsequence(LED3, 3, 0);
     early_sending_flag = 1;
   }
 
