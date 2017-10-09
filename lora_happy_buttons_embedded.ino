@@ -279,28 +279,40 @@ void btnint() {
       
       specialpwmsequence(LED0, pwm_time, pwm_times);
 
-      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      for(int i = 0; i <= 2500; i++) {
+        delayMicroseconds(1000);
+      }
     }
     if(switch1_debouncer >= 50) {
       switch1_counter++;
       
       specialpwmsequence(LED1, pwm_time, pwm_times);
 
-      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      for(int i = 0; i <= 2500; i++) {
+        delayMicroseconds(1000);
+      }
     }
     if(switch2_debouncer >= 50) {
       switch2_counter++;
       
       specialpwmsequence(LED2, pwm_time, pwm_times);
 
-      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      for(int i = 0; i <= 2500; i++) {
+        delayMicroseconds(1000);
+      }
     }
     if(switch3_debouncer >= 50) {
       switch3_counter++;
       
       specialpwmsequence(LED3, pwm_time, pwm_times);
 
-      LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
+      for(int i = 0; i <= 2500; i++) {
+        delayMicroseconds(1000);
+      }
     }  
   }
   if(btn_pcb_debouncer >= 90) {
