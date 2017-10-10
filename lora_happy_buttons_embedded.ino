@@ -55,7 +55,7 @@ uint8_t early_sending_flag = 0;
 uint8_t low_battery_flag = 0;
 uint8_t blocking_flag = 0;
 
-uint8_t debug_flag = 0;
+uint8_t debug_flag = 1;
 
 // Get's reseted to 0x00 after first lorawan transmit
 uint8_t device_status = 0x01;
@@ -181,6 +181,10 @@ void onEvent (ev_t ev) {
               
             if (LMIC.dataLen == 2) {
               Serial.println("Received configuration Frame");
+
+              uint8_t success[1] = { 0xFF };
+
+                                
               switch(LMIC.frame[LMIC.dataBeg]) {
                 case transmission_delay:
                   Serial.print("New remote config - Tranmission delay: ");
@@ -188,6 +192,10 @@ void onEvent (ev_t ev) {
                   myconfig_internal.transmission_delay_value = LMIC.frame[LMIC.dataBeg + 1];
               
                   EEPROM.put(60, myconfig_internal);
+                  
+                  LMIC_setTxData2(50, success, 1, 0);
+
+                  return;
                   break;
                 case debouncing_time:
                   Serial.print("New remote config - debouncing time: ");
@@ -195,6 +203,10 @@ void onEvent (ev_t ev) {
                   myconfig_internal.debouncing_time_value = LMIC.frame[LMIC.dataBeg + 1];
               
                   EEPROM.put(60, myconfig_internal);
+
+                  LMIC_setTxData2(50, success, 1, 0);
+
+                  return;
                   break;
                 case blinking:
                   Serial.print("New remote config - blinking: ");
@@ -202,6 +214,10 @@ void onEvent (ev_t ev) {
                   myconfig_internal.blinking_value = LMIC.frame[LMIC.dataBeg + 1];
               
                   EEPROM.put(60, myconfig_internal);
+
+                  LMIC_setTxData2(50, success, 1, 0);
+
+                  return;
                   break;
               }
             }
