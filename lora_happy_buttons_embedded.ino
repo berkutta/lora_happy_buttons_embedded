@@ -36,6 +36,7 @@ typedef struct {
 typedef struct {
   uint8_t transmission_delay_value;
   uint8_t debouncing_time_value;
+  uint8_t blinking_value;
 } taz_configuration_internal_t;
 
 taz_configuration_t myconfig;
@@ -71,7 +72,8 @@ const lmic_pinmap lmic_pins = {
 
 enum configuration_frame {
   transmission_delay = 0xA1,
-  debouncing_time = 0xA2
+  debouncing_time = 0xA2,
+  blinking = 0xA3
 };
 
 void specialpwm(uint8_t pin, uint8_t duration, uint8_t percentage) {
@@ -194,6 +196,13 @@ void onEvent (ev_t ev) {
               
                   EEPROM.put(60, myconfig_internal);
                   break;
+                case blinking:
+                  Serial.print("New remote config - blinking: ");
+                  Serial.print(LMIC.frame[LMIC.dataBeg + 1], DEC);
+                  myconfig_internal.blinking_value = LMIC.frame[LMIC.dataBeg + 1];
+              
+                  EEPROM.put(60, myconfig_internal);
+                  break;
               }
             }
 
@@ -300,8 +309,10 @@ void btnint() {
   if(blocking_flag == 0) {
     if(switch0_debouncer >= myconfig_internal.debouncing_time_value) {
       switch0_counter++;
-      
-      specialpwmsequence(LED0, pwm_time, pwm_times);
+
+      if(myconfig_internal.blinking_value != 0x00) {
+        specialpwmsequence(LED0, pwm_time, pwm_times);      
+      }
 
       //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
       for(int i = 0; i <= 2500; i++) {
@@ -310,8 +321,10 @@ void btnint() {
     }
     if(switch1_debouncer >= myconfig_internal.debouncing_time_value) {
       switch1_counter++;
-      
-      specialpwmsequence(LED1, pwm_time, pwm_times);
+
+      if(myconfig_internal.blinking_value != 0x00) {
+        specialpwmsequence(LED1, pwm_time, pwm_times);
+      }
 
       //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
       for(int i = 0; i <= 2500; i++) {
@@ -320,9 +333,11 @@ void btnint() {
     }
     if(switch2_debouncer >= myconfig_internal.debouncing_time_value) {
       switch2_counter++;
-      
-      specialpwmsequence(LED2, pwm_time, pwm_times);
 
+      if(myconfig_internal.blinking_value != 0x00) {
+        specialpwmsequence(LED2, pwm_time, pwm_times);
+      }
+      
       //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
       for(int i = 0; i <= 2500; i++) {
         delayMicroseconds(1000);
@@ -330,9 +345,11 @@ void btnint() {
     }
     if(switch3_debouncer >= myconfig_internal.debouncing_time_value) {
       switch3_counter++;
-      
-      specialpwmsequence(LED3, pwm_time, pwm_times);
 
+      if(myconfig_internal.blinking_value != 0x00) {
+       specialpwmsequence(LED3, pwm_time, pwm_times);
+      }
+      
       //LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_OFF);
       for(int i = 0; i <= 2500; i++) {
         delayMicroseconds(1000);
@@ -396,17 +413,17 @@ void setup() {
   EEPROM.get(0, myconfig);
   EEPROM.get(60, myconfig_internal);
 
-  if( (myconfig_internal.transmission_delay_value == 0xFF) && (myconfig_internal.debouncing_time_value == 0xFF) ) {
+  if( (myconfig_internal.transmission_delay_value == 0xFF) && (myconfig_internal.debouncing_time_value == 0xFF) && (myconfig_internal.blinking_value == 0xFF) ) {
     Serial.println("New EEPROM, reset to default values");
     myconfig_internal.transmission_delay_value = 0x4B; // 10min
     myconfig_internal.debouncing_time_value = 0x32;
-
+    myconfig_internal.blinking_value = 0x00;
     EEPROM.put(60, myconfig_internal);
   }
 
   char mybuffer[150];
-  sprintf(mybuffer, "Transmission delay: %d\nDebouncing Time: %d\nSNR: %d\nVersion: %d\nAppeui: %X%X%X%X%X%X%X%X\nDeveui: %X%X%X%X%X%X%X%X\nAppkey: %X%X%X%X%X%X%X%X%X%X%X%X%X%X%X%X", 
-              myconfig_internal.transmission_delay_value, myconfig_internal.debouncing_time_value, myconfig.snr, myconfig.version,
+  sprintf(mybuffer, "Transmission delay: %d\nDebouncing Time: %d\nBlinking Value: %d\nSNR: %d\nVersion: %d\nAppeui: %X%X%X%X%X%X%X%X\nDeveui: %X%X%X%X%X%X%X%X\nAppkey: %X%X%X%X%X%X%X%X%X%X%X%X%X%X%X%X", 
+              myconfig_internal.transmission_delay_value, myconfig_internal.debouncing_time_value, myconfig_internal.blinking_value, myconfig.snr, myconfig.version,
               myconfig.appeui[0], myconfig.appeui[1], myconfig.appeui[2], myconfig.appeui[3], myconfig.appeui[4], myconfig.appeui[5], myconfig.appeui[6], myconfig.appeui[7],
               myconfig.deveui[0], myconfig.deveui[1], myconfig.deveui[2], myconfig.deveui[3], myconfig.deveui[4], myconfig.deveui[5], myconfig.deveui[6], myconfig.deveui[7],
               myconfig.appkey[0], myconfig.appkey[1], myconfig.appkey[2], myconfig.appkey[3], myconfig.appkey[4], myconfig.appkey[5], myconfig.appkey[6], myconfig.appkey[7], myconfig.appkey[8], myconfig.appkey[9], myconfig.appkey[10], myconfig.appkey[11], myconfig.appkey[12], myconfig.appkey[13], myconfig.appkey[14], myconfig.appkey[15]
