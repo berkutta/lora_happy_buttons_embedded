@@ -55,7 +55,7 @@ uint8_t early_sending_flag = 0;
 uint8_t low_battery_flag = 0;
 uint8_t blocking_flag = 0;
 
-uint8_t debug_flag = 1;
+uint8_t debug_flag = 0;
 
 // Get's reseted to 0x00 after first lorawan transmit
 uint8_t device_status = 0x01;
@@ -126,13 +126,6 @@ void enter_sleep_condition(void) {
   pinMode(RFM_NSS, INPUT);
   pinMode(RFM_RST, INPUT);
   digitalWrite(PSU_SWITCH, 1);
-
-  pinMode(PB5, INPUT);
-  pinMode(PB4, INPUT);
-  pinMode(PB3, INPUT); 
-
-     pinMode(PD0, INPUT); 
-       pinMode(PD1, INPUT); 
 
   attachPCINT(digitalPinToPCINT(BTN_PCB), btnint, FALLING);
 }
