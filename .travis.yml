@@ -27,4 +27,4 @@ install:
 script:
     - platformio ci --build-dir /tmp/build/ --keep-build-dir --board=pro8MHzatmega328
     - mv /tmp/build/.pioenvs/pro8MHzatmega328/firmware.hex $hex_name
-    - ./gdrive upload --refresh-token $drive_token --parent $drive_folder $hex_name
+#    - ./gdrive upload --refresh-token $drive_token --parent $drive_folder $hex_name
