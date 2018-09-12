@@ -109,7 +109,11 @@ float convert_analog(float value) {
 }
 
 void enter_sleep_condition(void) {
-  LMIC_shutdown();
+  if(myconfig.version == 0x01) {
+    LMIC_shutdown();
+  } else {
+    os_radio(RADIO_RST); 
+  }
 
   if(debug_flag == 1) {
     Serial.println("Going to sleep now\n");
@@ -122,6 +126,13 @@ void enter_sleep_condition(void) {
   pinMode(RFM_NSS, INPUT);
   pinMode(RFM_RST, INPUT);
   digitalWrite(PSU_SWITCH, 1);
+
+  pinMode(PB5, INPUT);
+  pinMode(PB4, INPUT);
+  pinMode(PB3, INPUT); 
+
+     pinMode(PD0, INPUT); 
+       pinMode(PD1, INPUT); 
 
   attachPCINT(digitalPinToPCINT(BTN_PCB), btnint, FALLING);
 }
@@ -139,9 +150,13 @@ void exit_sleep_condition(void) {
   pinMode(RFM_NSS, OUTPUT);
   //pinMode(PSU_SWITCH, OUTPUT);            
   SPI.begin();
-  
-  os_init();
-  LMIC.opmode       =  OP_NONE;
+
+  if(myconfig.version == 0x01) {
+    os_init();
+    LMIC.opmode       =  OP_NONE; 
+  } else {
+    Serial.println("No need for nasty shit ¯\\_(ツ)_/¯");
+  }
 }
 
 
